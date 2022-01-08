@@ -1,0 +1,26 @@
+id,name,min,max
+ery,Erythrozyten (T/l),"4,5","5,9"
+hb,Haemoglobin (g/dl),"13,5","17,5"
+leuk,Leukozyten (G/l),"3,5","9,8"
+hk,Haematokrit (l/l),"0,4","0,53"
+mch,MCH (pg/Ery),28,33
+mchc,MCHC (g/dl),33,36
+mcv,MCV (fl),83,103
+thro,Thrombozyten (G/l),140,360
+neut,Neutrophile (%),40,75
+lym,Lymphozyten (%),18,48
+mono,Monozyten (%),3,14
+eos,Eosinophile (%),0,7
+baso,Basophile (%),0,1
+rdwsd,RDWSD Anisozytose (fl),"35,1","43,9"
+crp,C reaktives Prot. O I (mg/l),0,5
+k,Kalium (mmol/l),"3,5","5,6"
+na,Natrium (mmol/l),135,155
+bilg,Bilirubin gesamt (mg/dl),0,"1,1"
+ap,Alkal Phosphase (U/l),40,130
+lipa,Lipase (U/l),7,60
+ggt,GGT (U/l),0,60
+cres,Creatinin (mg/dl),"0,67","1,17"
+got,GOT (U/l),0,50
+gpt,GPT (U/l),0,50
+gfr,"Glom. filt. Rate CRE (ml/min/1,73m2KOF)",80,140

@@ -1,0 +1,167 @@
+---
+title: "Medical Summary (random data)"
+output: 
+  flexdashboard::flex_dashboard:
+  vertical_layout: fill
+  theme: journal
+---
+
+```{css}
+@font-face {
+    font-family: Arial;
+}
+
+.navbar-inverse {
+    background-color: rgb(255, 0, 0);
+    border-color: rgb(230, 0, 0);
+}
+
+.navbar-inverse .navbar-brand {
+    font-family: 'Arial';
+    color: #FFF8DC;
+}
+
+.tabset { 
+  background-color: rgb(242, 242, 242);
+}
+
+.nav-tabs-custom > .nav-tabs > li.active {border-top-color: rgb(180, 180, 180)}
+}
+
+
+```
+
+```{r setup, echo=FALSE}
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+library(lubridate)
+library(dygraphs)
+library(formattable)
+library(tidyverse)
+
+blood <- read_csv("blutwerte_random.csv", locale = locale(decimal_mark = ",")) %>% data.frame()
+
+nv <- read_csv("normwerte.csv", locale = locale(decimal_mark = ",")) 
+nv <- nv %>% mutate(id = toupper(id)) %>% data.frame()
+```
+
+```{r transformation, echo=FALSE}
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+blood$date <- as.POSIXct(blood$date, format = "%d-%m-%Y")
+
+blood$state <- factor(blood$state, levels = c("n_nüchtern", "nüchtern"), labels = c("nicht nüchtern", "nüchtern"))
+
+blood_z <- zoo::zoo(blood)
+blood_t <- ts(blood_z)
+```
+
+
+Column {data-width=600, .tabset .tabset-fade}
+-----------------------------
+
+```{r ggprinter}
+ggprinter <- function(g) {
+  
+  ggplot(blood, aes(date, blood[,g+4]))+
+    ggtitle(sprintf("%s", nv$name[g]))+
+    geom_hline(yintercept=(nv$min)[g], 
+               color = rgb(100,100,100, maxColorValue = 255),
+               linetype = 2)+
+    geom_hline(yintercept=(nv$max)[g], 
+               color = rgb(100,100,100, maxColorValue = 255),
+               linetype = 2)+
+    geom_line(color = rgb(255,0,0, maxColorValue = 255))+
+        geom_point(color = rgb(255,255,255, maxColorValue = 255),
+               size = 3)+
+    geom_point(color = rgb(255,0,0, maxColorValue = 255),
+               shape = 21, size = 3)+
+    theme_minimal()+
+    theme(
+           panel.grid.minor.y = element_blank() ,
+           panel.grid.minor.x = element_blank() ,
+           panel.grid.major.x = element_blank())+
+    ylab(NULL)+
+    xlab(NULL)+
+    annotate("text", min(blood$date)+1e7, (nv$max)[g], vjust = 1.7, label = "Max. Cutoff", color = rgb(100,100,100, maxColorValue = 255), alpha = 0.5, size = 3)+
+    annotate("text", min(blood$date)+1e7, (nv$min)[g], vjust = -1, label = "Min. Cutoff", color = rgb(100,100,100, maxColorValue = 255), alpha = 0.5, size = 3)
+
+}
+
+```
+
+```{r, echo = FALSE, eval = TRUE}
+
+out <- lapply(seq_along(blood[,-c(1:4)]), function(i) {
+  
+  a1 <- knitr::knit_expand(text = sprintf("### %s\n", names(blood)[i+4]))  # tab header
+  a2 <- knitr::knit_expand(text = "\n```{r, results='asis', echo = FALSE}") # start r chunk
+  a3 <- knitr::knit_expand(text = sprintf("\nggprinter(%d)", i))
+  a4 <- knitr::knit_expand(text = "\n```\n") # end r chunk
+  
+paste(a1, a2, a3, a4, collapse = '\n')
+
+})
+
+```
+
+`r knitr::knit(text = paste(out, collapse = '\n'))`
+
+####
+
+Column {data-width=400}
+-------------------------------------
+
+### Medication per day *(average of the last 3 months)*
+
+```{r vb1}
+n_tab <- (blood$skilarence.avg_last3months.)[nrow(blood)]
+flexdashboard::valueBox(n_tab, 
+                        color = "red",
+                        icon = "fa-tablets")
+```
+
+### Latest Results **(`r max(blood$date)`)**
+
+```{r aktuell, echo=FALSE, rows.print=20}
+
+customGreen0 = "#DeF7E9"
+
+customGreen = "#71CA97"
+
+customRed = "#ff7f7f"
+
+improvement_formatter <- formatter("span", 
+                                   style = x ~ style(font.weight = "normal", 
+                                                     color = ifelse(x > 0, customGreen,
+                                                                    ifelse(x < 0, customRed,
+                                                                           "black"))),
+                                   x ~ icontext(ifelse(x>0, "arrow-up", "arrow-down"), x)
+                                   )
+
+bt <- blood[nrow(blood),-c(1:4)]
+
+bt <- t(blood[nrow(blood),-c(1:4)])
+
+bt <- data.frame(bt)
+
+
+bt$delta <- t(blood[nrow(blood),-c(1:4)]) - t(blood[nrow(blood)-1,-c(1:4)])
+
+bt$min <- nv$min
+
+bt$max <- nv$max
+
+colnames(bt) <- c("Latest", "Diff", "Min.", "Max.")
+
+rownames(bt) <- nv$name
+
+bt <- round(bt, digits = 2)
+
+formattable(bt, list(
+  `Diff` = improvement_formatter
+))
+```
+
